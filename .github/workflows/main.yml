@@ -21,18 +21,20 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: build spring boot app
-        run: |
-          cd backend
-          chmod 777 ./mvnw
-          ./mvnw clean package -DskipTests
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/spring-app:latest .
-          docker push ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
+      # - name: build spring boot app
+      #   run: |
+      #     cd backend
+      #     chmod 777 ./mvnw
+      #     ./mvnw clean package -DskipTests
+      #     docker build -t ${{ secrets.DOCKER_USERNAME }}/spring-app:latest .
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
 
       - name: build react app
         run: |
           cd web
           echo ${{ secrets.REACT_ENV }} | base64 --decode > ./.env
+          ls -a
+          cat .env
           npm install
           npm run build
           docker build -t ${{ secrets.DOCKER_USERNAME }}/react-app:latest .
