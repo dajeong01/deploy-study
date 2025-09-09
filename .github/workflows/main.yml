@@ -29,6 +29,14 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/spring-app:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
 
+      - name: build react app
+        run: |
+          cd web
+          npm install
+          npm run build
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/react-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+
 
 
 
