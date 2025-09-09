@@ -1,0 +1,13 @@
+name: github-actions-test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  print-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: script-test
+        run: echo "Github Actions Print Test"
