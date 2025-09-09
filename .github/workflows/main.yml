@@ -32,7 +32,7 @@ jobs:
       - name: build react app
         run: |
           cd web
-          echo ${{ secrets.REACT_ENV }} | base64 --decode > ./.env
+          echo ${{ secrets.REACT_ENV }} | base64 --decode > .env
           ls -a
           cat .env
           npm install
