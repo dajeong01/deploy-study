@@ -9,5 +9,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: script-test
-        run: echo "Github Actions Print Test"
+      - name: dir list print1
+        run: ls -a
+    
+      - name: checkout
+        uses: actions/checkout@v5
+
+      - name: dir list print2
+        run: ls -a
+
+
+
+
+
+
+
+        
