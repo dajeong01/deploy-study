@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest 
 
     steps:
-      - name: dir list print
+      - name: dir list print1
         run: ls -a
         
       - name: checkout
