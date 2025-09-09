@@ -32,6 +32,9 @@ jobs:
       - name: build react app
         run: |
           cd web
+          cat <<EOF | sudo tee ./.env
+          ${{ secrets.REACT_ENV }}
+          EOF
           npm install
           npm run build
           docker build -t ${{ secrets.DOCKER_USERNAME }}/react-app:latest .
