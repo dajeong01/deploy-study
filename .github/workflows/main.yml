@@ -20,6 +20,9 @@ jobs:
       REACT_ENV: ${{ 
         github.ref_name == 'deploy_junil' && secrets.REACT_ENV_JUNIL
         }}
+      BUILD_MODE: ${{ 
+        github.ref_name == 'deploy_junil' && 'junil'
+        }}
     steps:
       - name: checkout
         uses: actions/checkout@v5.0.0
@@ -50,7 +53,7 @@ jobs:
           echo ${{ env.REACT_ENV }} | base64 --decode > .env
           ls -a
           cat .env
-          docker build -t ${{ env.DOCKER_USERNAME }}/react-app:latest .
+          docker build --build-arg SERVERNAME=${{ env.BUILD_MODE }} -t ${{ env.DOCKER_USERNAME }}/react-app:latest .
           docker push ${{ env.DOCKER_USERNAME }}/react-app:latest
 
 
