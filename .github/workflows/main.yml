@@ -37,7 +37,7 @@ jobs:
 
       - name: build spring boot app
         run: |
-          cd backend
+          cd running_back_S2
           echo ${{ env.APPLICATION_SECRET }} | base64 --decode > ./src/main/resources/application-secret.yml
           chmod 777 ./mvnw
           ./mvnw clean package -DskipTests
@@ -46,7 +46,7 @@ jobs:
 
       - name: build react app
         run: |
-          cd web
+          cd running_front_S2
           echo ${{ env.REACT_ENV }} | base64 --decode > .env
           ls -a
           cat .env
