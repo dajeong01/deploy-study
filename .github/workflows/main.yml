@@ -9,14 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ 
-        github.ref_name == 'deploy_junil' && secrets.DOCKER_USERNAME_JUNIL ||
-        github.ref_name == 'deploy_test1' && secrets.DOCKER_USERNAME_JUNIL ||
-        github.ref_name == 'deploy_test2' && secrets.DOCKER_USERNAME_JUNIL
+        github.ref_name == 'deploy_junil' && secrets.DOCKER_USERNAME_JUNIL
         }}
       DOCKER_PASSWORD: ${{ 
-        github.ref_name == 'deploy_junil' && secrets.DOCKER_PASSWORD_JUNIL ||
-        github.ref_name == 'deploy_test1' && secrets.DOCKER_PASSWORD_JUNIL ||
-        github.ref_name == 'deploy_test2' && secrets.DOCKER_PASSWORD_JUNIL
+        github.ref_name == 'deploy_junil' && secrets.DOCKER_PASSWORD_JUNIL
+        }}
+      APPLICATION_SECRET: ${{ 
+        github.ref_name == 'deploy_junil' && secrets.APPLICATION_SECRET_JUNIL
+        }}
+      REACT_ENV: ${{ 
+        github.ref_name == 'deploy_junil' && secrets.REACT_ENV_JUNIL
         }}
     steps:
       - name: checkout
