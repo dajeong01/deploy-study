@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.gathering.ParticipantMapper">
+
+    <insert id="insert">
+        INSERT INTO gathering_participant_tb (gathering_id, user_id)
+        VALUES (#{gatheringId}, #{userId});
+    </insert>
+
+    <delete id="deleteByGatheringIdAndUserId">
+        DELETE FROM gathering_participant_tb
+        WHERE gathering_id = #{gatheringId}
+        AND user_id = #{userId};
+    </delete>
+
+    <select id="countByGatheringId" resultType="int">
+        SELECT COUNT(*)
+        FROM gathering_participant_tb
+        WHERE gathering_id = #{gatheringId};
+    </select>
+
+    <select id="existsByGatheringIdAndUserId" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM gathering_participant_tb
+        WHERE gathering_id = #{gatheringId} AND user_id = #{userId}
+    </select>
+
+    <select id="getAttendanceStatusById" resultType="int">
+        SELECT attendance_status
+        FROM gathering_participant_tb
+        WHERE gathering_id = #{gatheringId}
+        AND user_id = #{userId}
+    </select>
+
+    <update id="updateAttendance" parameterType="map">
+        UPDATE gathering_participant_tb
+        SET attendance_status = CASE user_id
+        <foreach collection="list" item="dto">
+            WHEN #{dto.userId} THEN #{dto.attendanceStatus}
+        </foreach>
+        ELSE attendance_status
+        END
+        WHERE gathering_id = #{gatheringId}
+        AND user_id IN
+        <foreach collection="list" item="dto" open="(" separator="," close=")">
+            #{dto.userId}
+        </foreach>
+    </update>
+
+
+</mapper>

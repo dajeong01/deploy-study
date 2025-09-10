@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.globalNotice.GlobalNoticeMapper">
+
+    <resultMap id="GlobalNoticeMap" type="com.korit.running_back_s2.domain.globalNotice.GlobalNotice">
+        <id     property="noticeId"                 column="notice_id"/>
+        <result property="userId"                   column="f_user_id"/>
+        <result property="title"                    column="title"/>
+        <result property="content"                  column="content"/>
+        <result property="createdAt"                column="created_at" />
+
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"                       column="user_id" />
+        <result property="oauthType"                column="oauth_type" />
+        <result property="providerId"               column="provider_id" />
+        <result property="email"                    column="email" />
+        <result property="picture"                  column="picture" />
+        <result property="fullName"                 column="full_name" />
+        <result property="nickname"                 column="nickname" />
+        <result property="phoneNumber"              column="phone_number" />
+        <result property="gunguId"                  column="gungu_id" />
+        <result property="address"                  column="address" />
+        <result property="birthDate"                column="birth_date" />
+        <result property="gender"                   column="gender" />
+        <result property="totalKm"                  column="total_km" />
+        <result property="role"                     column="role" />
+    </resultMap>
+
+    <update id="updateContent">
+        UPDATE
+            global_notice_tb
+        SET
+            title = #{title},
+            content = #{content}
+        WHERE 
+            notice_id = #{noticeId}
+    </update>
+
+    <delete id="deleteFeed">
+        delete from global_notice_tb
+        where notice_id = #{noticeId}
+    </delete>
+
+    <select id="findAllNoticeListBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.globalNotice.GlobalNoticeSearchOption"
+            resultMap="GlobalNoticeMap">
+        select
+            n.notice_id,
+            n.user_id as f_user_id,
+            u.nickname,
+            n.title,
+            n.content,
+            n.created_at
+        from
+            global_notice_tb n
+            left outer join user_tb u on(n.user_id = u.user_id)
+        <where>
+            <if test="searchText != null and searchText != ''">
+                (
+                n.title   LIKE CONCAT('%', #{searchText}, '%')
+                OR n.content LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+        order by
+            n.notice_id desc
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="countNoticeListsBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.globalNotice.GlobalNoticeSearchOption"
+            resultType="int">
+        SELECT
+        COUNT(*)
+        FROM global_notice_tb n
+        LEFT JOIN user_tb u ON u.user_id = n.user_id
+
+        <where>
+            <if test="searchText != null and searchText != ''">
+                (
+                n.title   LIKE CONCAT('%', #{searchText}, '%')
+                OR n.content LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" keyProperty="noticeId" useGeneratedKeys="true">
+        insert into global_notice_tb
+        (user_id, title, content)
+        values (#{userId}, #{title}, #{content})
+    </insert>
+
+    <select id="findDetailById" resultMap="GlobalNoticeMap">
+        select
+            c.notice_id,
+            c.user_id,
+            c.title,
+            c.content,
+            c.created_at,
+            u.nickname
+        from
+            global_notice_tb c
+            left outer join user_tb u on(u.user_id = c.user_id)
+        where
+            c.notice_id = #{noticeId}
+    </select>
+
+    <select id="checkRoleAdmin" resultType="java.lang.String">
+        select
+            role
+        from
+            user_tb
+        where
+            user_id = #{userId}
+    </select>
+
+
+
+</mapper>

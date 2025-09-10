@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.notice.CrewNoticeMapper">
+
+    <resultMap id="CrewNoticeMap" type="com.korit.running_back_s2.domain.notice.CrewNotice">
+        <id     property="noticeId"                  column="notice_id"/>
+        <result property="crewId"                   column="crew_id"/>
+        <result property="userId"                   column="f_user_id"/>
+        <result property="title"                    column="title"/>
+        <result property="content"                  column="content"/>
+        <result property="createdAt"                column="created_at" />
+<!--        <result property="view"                     column="view" />-->
+
+        <association property="user" resultMap="UserMap" />
+        <association property="member" resultMap="MemberMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"                       column="user_id" />
+        <result property="oauthType"                column="oauth_type" />
+        <result property="providerId"               column="provider_id" />
+        <result property="email"                    column="email" />
+        <result property="picture"                  column="picture" />
+        <result property="fullName"                 column="full_name" />
+        <result property="nickname"                 column="nickname" />
+        <result property="phoneNumber"              column="phone_number" />
+        <result property="gunguId"                  column="gungu_id" />
+        <result property="address"                  column="address" />
+        <result property="birthDate"                column="birth_date" />
+        <result property="gender"                   column="gender" />
+        <result property="totalKm"                  column="total_km" />
+        <result property="role"                     column="role" />
+    </resultMap>
+
+    <resultMap id="MemberMap" type="com.korit.running_back_s2.domain.member.Member">
+        <id     property="memberId"                 column="member_id"/>
+        <result property="userId"                   column="cm_user_id"/>
+        <result property="roleId"                   column="role_id"/>
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <update id="updateContent">
+        UPDATE
+        crew_notice_tb
+        SET
+        title = #{title},
+        content = #{content}
+        WHERE notice_id = #{noticeId}
+    </update>
+
+    <delete id="deleteFeed">
+        delete from crew_notice_tb
+        where notice_id = #{noticeId} and crew_id = #{crewId}
+    </delete>
+
+    <select id="findAllNoticeListBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.notice.CrewNoticeSearchOption"
+            resultMap="CrewNoticeMap">
+        select
+            n.notice_id,
+            n.crew_id,
+            n.user_id as f_user_id,
+            u.nickname,
+            n.title,
+            n.content,
+            n.created_at
+        from
+            crew_notice_tb n
+            left outer join user_tb u on(n.user_id = u.user_id)
+        where
+            n.crew_id = #{crewId}
+            <if test="searchText != null and searchText != ''">
+            AND (
+            n.title LIKE CONCAT('%', #{searchText}, '%') or u.nickname LIKE CONCAT('%', #{searchText}, '%') )
+            </if>
+        order by
+            n.notice_id desc
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="countNoticeListsBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.notice.CrewNoticeSearchOption"
+            resultType="int">
+        select
+            COUNT(*)
+        from
+        crew_notice_tb n
+        left outer join user_tb u on (u.user_id = n.user_id)
+        where
+            n.crew_id = #{crewId}
+            <if test="searchText != null and searchText != ''">
+                AND (
+                n.title LIKE CONCAT('%', #{searchText}, '%'))
+            </if>
+    </select>
+
+    <insert id="insert" keyProperty="noticeId" useGeneratedKeys="true">
+        insert into crew_notice_tb
+        (crew_id, user_id, title, content)
+        values (#{crewId}, #{userId}, #{title}, #{content})
+    </insert>
+
+    <select id="findDetailById" resultMap="CrewNoticeMap">
+        select
+            c.notice_id,
+            c.crew_id,
+            c.user_id,
+            c.title,
+            c.content,
+            c.created_at,
+            u.nickname
+        from
+            crew_notice_tb c
+            left outer join user_tb u on(u.user_id = c.user_id)
+        where
+            c.notice_id = #{noticeId} and c.crew_id = #{crewId}
+    </select>
+
+
+
+</mapper>

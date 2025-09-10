@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.crew.CrewMapper">
+
+    <resultMap id="CrewMap" type="com.korit.running_back_s2.domain.crew.Crew">
+        <id property="crewId"                   column="crew_id"/>
+        <result property="gunguId"              column="gungu_id"/>
+        <result property="crewName"             column="crew_name"/>
+        <result property="title"                column="title"/>
+        <result property="content"              column="content"/>
+        <result property="limitedPeople"        column="limited_people"/>
+        <result property="profilePicture"       column="profile_picture"/>
+        <result property="thumbnailPicture"     column="thumbnail_picture"/>
+        <result property="userId"               column="user_id"/>
+        <result property="createdAt"            column="created_at"/>
+        <result property="totalKm"              column="total_km"/>
+        <result property="gunguName"            column="gungu_name"/>
+    </resultMap>
+
+    <resultMap id="GungguMap" type="com.korit.running_back_s2.domain.gungu.Gungu">
+        <id property="gunguId"                  column="gungu_id"/>
+        <result property="gunguName"            column="gungu_name"/>
+    </resultMap>
+
+
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="crewId">
+        INSERT INTO crew_tb
+                ( user_id, gungu_id, crew_name, title, content, limited_people, profile_picture, thumbnail_picture)
+        VALUES ( #{userId}, #{gunguId}, #{crewName}, #{title}, #{content}, #{limitedPeople}, #{profilePicture}, #{thumbnailPicture} )
+    </insert>
+
+    <update id="updateCrewThumbnailPicture">
+        update crew_tb
+        set thumbnail_picture = #{thumbnailPicture}
+        where crew_id = #{crewId}
+    </update>
+
+    <update id="updateCrewProfilePicture">
+        update crew_tb
+        set profile_picture = #{profilePicture}
+        where crew_id = #{crewId}
+    </update>
+
+    <update id="updateCrew">
+        update crew_tb
+        set
+            crew_name = #{crewName},
+            title = #{title},
+            content = #{content},
+            limited_people = #{limitedPeople}
+        where
+            crew_id = #{crewId}
+    </update>
+    <update id="updateAllCrewTotalKm">
+            UPDATE
+                crew_tb
+            SET
+            total_km = (
+                SELECT COALESCE(SUM(g.km), 0)
+                FROM gathering_tb g
+                INNER JOIN gathering_participant_tb gp ON g.gathering_id = gp.gathering_id
+                WHERE g.crew_id = crew_tb.crew_id
+                AND gp.attendance_status = '1'
+                )
+    </update>
+
+    <update id="updateCrewLeader">
+        update crew_tb
+        set
+            user_id = #{userId}
+        where
+            crew_id = #{crewId}
+    </update>
+
+    <select id="findByCrewName" resultType="com.korit.running_back_s2.domain.crew.Crew">
+        select
+            crew_id,
+            gungu_id,
+            profile_picture,
+            thumbnail_picture,
+            crew_name,
+            user_id,
+            title,
+            content,
+            limited_people,
+            created_at,
+            total_km
+        from
+            crew_tb
+        where
+            crew_name = #{crewName}
+    </select>
+
+    <select id="findByCrewId" resultMap="CrewMap">
+        SELECT
+            ct.crew_id,
+            ct.gungu_id,
+            gt.gungu_name,
+            ct.crew_name,
+            ct.title,
+            ct.content,
+            ct.profile_picture,
+            ct.thumbnail_picture,
+            ct.limited_people,
+            ct.user_id,
+            ct.created_at,
+            ct.total_km
+        FROM
+            crew_tb ct
+            left outer join gungu_tb gt on(ct.gungu_id = gt.gungu_id)
+        WHERE
+            ct.crew_id = #{crewId}
+    </select>
+    <select id="findAllBySearchOption" resultMap="CrewMap">
+        select
+            ct.crew_id,
+            ct.gungu_id,
+            gt.gungu_name,
+            ct.profile_picture,
+            ct.thumbnail_picture,
+            ct.crew_name,
+            ct.user_id,
+            ut.full_name,
+            ct.title,
+            ct.content,
+            ct.limited_people,
+            ct.created_at
+        from
+            crew_tb ct
+            left outer join gungu_tb gt on(ct.gungu_id = gt.gungu_id)
+            left outer join user_tb ut on(ut.user_id = ct.user_id)
+        <where>
+            <if test="gunguId != null">
+                and ct.gungu_id = #{gunguId}
+            </if>
+            <if test="searchText != null and searchText != ''">
+                and (
+                crew_name LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+        order by ct.created_at desc
+        limit #{size} offset #{startIndex}
+    </select>
+
+    <select id="countBySearchOption" resultType="int">
+        select COUNT(*)
+        from crew_tb
+        <where>
+            <if test="gunguId != null">
+                and gungu_id = #{gunguId}
+            </if>
+            <if test="searchText != null and searchText != ''">
+                and (
+                crew_name LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="checkCrew" resultType="java.lang.Integer">
+        select
+            count(*)
+        from
+            member_tb
+        where
+            user_id = #{userId} and role_id = 1
+    </select>
+
+    <select id="selectTop10CrewRankingByTotalKm" resultType="com.korit.running_back_s2.dto.ranking.CrewRankingRespDto">
+        select
+            ct.crew_id,
+            ct.crew_name,
+            ct.gungu_id,
+            gt.gungu_name,
+            ct.profile_picture,
+            ct.thumbnail_picture,
+            ct.total_km,
+            coalesce(mt.member_count, 0) as memberCount,
+            ct.created_at
+        from
+            crew_tb ct
+            left outer join gungu_tb gt on (ct.gungu_id = gt.gungu_id)
+            left outer join (
+                        select
+                            crew_id,
+                            count(*) as member_count
+                        from
+                            member_tb
+                        group by
+                            crew_id
+                        ) mt on (ct.crew_id = mt.crew_id)
+        order by
+            ct.total_km desc
+    </select>
+
+    <select id="selectTop10CrewRankingByMemberCount" resultType="com.korit.running_back_s2.dto.ranking.CrewRankingRespDto">
+        select
+            ct.crew_id,
+            ct.crew_name,
+            ct.gungu_id,
+            gt.gungu_name,
+            ct.profile_picture,
+            ct.thumbnail_picture,
+            ct.total_km,
+            coalesce(mt.member_count, 0) as memberCount,
+            ct.created_at
+        from
+            crew_tb ct
+            left outer join gungu_tb gt on (ct.gungu_id = gt.gungu_id)
+            left outer join (
+                        select
+                            crew_id,
+                            count(*) as member_count
+                        from
+                            member_tb
+                        group by
+                            crew_id
+                        ) mt on (ct.crew_id = mt.crew_id)
+        order by
+            mt.member_count desc
+    </select>
+
+    <select id="selectTop10CrewRankingByCreatedDate" resultType="com.korit.running_back_s2.dto.ranking.CrewRankingRespDto">
+        select
+            ct.crew_id,
+            ct.crew_name,
+            ct.gungu_id,
+            gt.gungu_name,
+            ct.profile_picture,
+            ct.thumbnail_picture,
+            ct.total_km,
+            coalesce(mt.member_count, 0) as memberCount,
+            ct.created_at
+        from
+            crew_tb ct
+            left outer join gungu_tb gt on (ct.gungu_id = gt.gungu_id)
+            left outer join (
+                        select
+                            crew_id,
+                            count(*) as member_count
+                        from
+                            member_tb
+                        group by
+                            crew_id
+                        ) mt on (ct.crew_id = mt.crew_id)
+        order by ct.created_at desc
+    </select>
+
+    <select id="findRoleByUserId" resultType="com.korit.running_back_s2.dto.crew.CrewRoleReqDto">
+        select
+            ct.crew_id,
+            mt.user_id,
+            mt.role_id
+        from
+            crew_tb ct
+            left join member_tb mt on mt.crew_id = ct.crew_id
+        where
+            mt.user_id = #{userId};
+    </select>
+
+    <select id="findThumbnailById" resultType="java.lang.String">
+        select
+            thumbnail_picture
+        from
+            crew_tb
+        where
+            crew_id = #{crewId}
+    </select>
+
+    <select id="findProfileById" resultType="java.lang.String">
+        select
+            profile_picture
+        from
+            crew_tb
+        where
+            crew_id = #{crewId}
+    </select>
+    <select id="findContentsByCrewId" resultType="com.korit.running_back_s2.dto.image.CrewAlbumRow">
+        SELECT
+        f.free_id,
+        f.content,
+        f.created_at
+        FROM crew_free_tb f          <!-- ← 네 테이블명에 맞게 수정 (예: free_tb) -->
+        WHERE f.crew_id = #{crewId}
+        ORDER BY f.free_id DESC
+    </select>
+
+    <select id="selectSectionsLatest"
+            parameterType="int"
+            resultType="com.korit.running_back_s2.dto.crew.SectionsLatestRaw">
+        SELECT
+        (SELECT MAX(cm.joined_at) FROM member_tb cm     WHERE cm.crew_id = #{crewId}) AS members,
+        (SELECT MAX(g.created_at)  FROM gathering_tb g          WHERE g.crew_id  = #{crewId}) AS gatherings,
+        (SELECT MAX(fb.created_at) FROM crew_free_tb fb WHERE fb.crew_id = #{crewId}) AS freeBoards,
+        (SELECT MAX(n.created_at)  FROM crew_notice_tb n      WHERE n.crew_id  = #{crewId}) AS notices
+    </select>
+
+</mapper>

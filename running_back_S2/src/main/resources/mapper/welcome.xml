@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.welcome.WelcomeMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="welcomeId">
+        insert into welcome_tb (crew_id, user_id, content)
+        values ( #{crewId}, #{userId}, #{content})
+    </insert>
+
+    <update id="update">
+        update welcome_tb
+        set status = '승인'
+        where crew_id = #{crewId}
+            and user_id = #{userId}
+    </update>
+
+    <update id="statusReject">
+        update welcome_tb
+        set status = '거절'
+        where welcome_id = #{welcomeId}
+    </update>
+
+    <update id="updateMyWelcome">
+        update welcome_tb
+        set content = #{content}
+        where
+            welcome_id = #{welcomeId}
+            and user_id = #{userId}
+    </update>
+
+    <delete id="deleteRejectedAfter7Days">
+        <![CDATA[
+        delete from welcome_tb
+        where status = '거절'
+          and created_at < DATE_SUB(now(), INTERVAL 7 DAY)
+        ]]>
+    </delete>
+
+    <delete id="deleteWithDrawAfter14Days">
+        <![CDATA[
+        delete from welcome_tb
+        where status = '승인'
+          and created_at < DATE_SUB(now(), INTERVAL 14 DAY)
+        ]]>
+    </delete>
+
+    <delete id="deleteMyWelcome">
+        delete from welcome_tb
+        where
+            welcome_id = #{welcomeId}
+    </delete>
+
+    <select id="findAllByCrewId" resultType="com.korit.running_back_s2.dto.welcome.WelcomeResDto">
+        select
+            cw.welcome_id,
+            cw.crew_id,
+            cw.user_id,
+            cw.content,
+            cw.status,
+            cw.created_at,
+            ut.nickname,
+            ut.birth_date,
+            ut.full_name,
+            row_number() over (partition by cw.crew_id order by cw.created_at desc) as welcome_rank
+        from
+            welcome_tb cw
+            left outer join user_tb ut on (cw.user_id = ut.user_id)
+        where
+            cw.crew_id = #{crewId}
+            and cw.status in ('대기중')
+    </select>
+
+    <select id="findByUserId" resultType="com.korit.running_back_s2.domain.welcome.Welcome">
+        select
+            welcome_id,
+            crew_id,
+            user_id,
+            content
+        from
+            welcome_tb
+        where
+            crew_id = #{crewId}
+            and user_id = #{userId}
+    </select>
+
+    <select id="findAllByUserId" resultType="com.korit.running_back_s2.dto.welcome.MyWelcomesResDto">
+        select
+            wt.welcome_id,
+            wt.crew_id,
+            ct.crew_name,
+            ct.profile_picture,
+            wt.content,
+            wt.user_id,
+            wt.status,
+            wt.created_at
+        from
+            welcome_tb wt
+            left outer join crew_tb ct on (ct.crew_id = wt.crew_id)
+            left outer join user_tb ut on (ut.user_id = wt.user_id)
+        where
+            wt.user_id = #{userId}
+    </select>
+</mapper>

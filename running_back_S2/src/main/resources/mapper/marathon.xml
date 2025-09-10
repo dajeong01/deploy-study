@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.marathon.MarathonMapper">
+
+    <select id="findAllEventsBySearchOption" resultType="com.korit.running_back_s2.domain.marathon.Marathon">
+        select
+            *
+        from
+            marathon_detail8
+        <where>
+            <if test="month != null">
+                and month = #{month}
+            </if>
+            <if test="searchText != null and searchText != ''">
+                and (
+                title like concat('%', #{searchText}, '%')
+                or location like concat('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+        order by month desc
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="countEventsBySearchOption" resultType="java.lang.Integer">
+        select COUNT(*)
+        from marathon_detail8
+        <where>
+            <if test="month != null">
+                and month = #{month}
+            </if>
+            <if test="searchText != null and searchText != ''">
+                and (
+                title   like concat('%', #{searchText}, '%')
+                or location like concat('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+    </select>
+</mapper>

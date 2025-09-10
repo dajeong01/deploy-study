@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.wishList.WishListMapper">
+
+    <insert id="insertWish">
+        insert into wishlist_tb (user_id, crew_id)
+        values (#{userId}, #{crewId})
+    </insert>
+
+    <delete id="deleteWish">
+        delete from wishlist_tb
+        where
+            user_id = #{userId}
+            and crew_id = #{crewId}
+    </delete>
+
+    <select id="getWishs" resultType="com.korit.running_back_s2.domain.wishList.WishList">
+        select
+            wt.wishlist_id,
+            wt.user_id,
+            wt.crew_id,
+            wt.created_at,
+            ct.crew_name,
+            ct.title,
+            ct.thumbnail_picture,
+            gt.gungu_name
+        from
+            wishlist_tb wt
+            left outer join crew_tb ct ON wt.crew_id = ct.crew_id
+            left outer join gungu_tb gt ON ct.gungu_id = gt.gungu_id
+        where
+            wt.user_id = #{userId}
+        order by
+            wt.created_at DESC
+    </select>
+</mapper>

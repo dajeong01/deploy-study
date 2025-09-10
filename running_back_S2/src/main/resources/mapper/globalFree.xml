@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.globalFreeBoard.GlobalFreeMapper">
+
+    <resultMap id="GlobalFreeMap" type="com.korit.running_back_s2.domain.globalFreeBoard.GlobalFree">
+        <id     property="freeId"                   column="free_id"/>
+        <result property="userId"                   column="f_user_id"/>
+        <result property="title"                    column="title"/>
+        <result property="content"                  column="content"/>
+        <result property="createdAt"                column="created_at" />
+
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"                       column="user_id" />
+        <result property="oauthType"                column="oauth_type" />
+        <result property="providerId"               column="provider_id" />
+        <result property="email"                    column="email" />
+        <result property="picture"                  column="picture" />
+        <result property="fullName"                 column="full_name" />
+        <result property="nickname"                 column="nickname" />
+        <result property="phoneNumber"              column="phone_number" />
+        <result property="gunguId"                  column="gungu_id" />
+        <result property="address"                  column="address" />
+        <result property="birthDate"                column="birth_date" />
+        <result property="gender"                   column="gender" />
+        <result property="totalKm"                  column="total_km" />
+        <result property="role"                     column="role" />
+    </resultMap>
+
+    <update id="updateContent">
+        UPDATE
+            global_free_tb
+        SET
+            title = #{title},
+            content = #{content}
+        WHERE free_id = #{freeId}
+    </update>
+
+    <delete id="deleteFeed">
+        delete from global_free_tb
+        where free_id = #{freeId}
+    </delete>
+
+    <select id="findAllFreeListBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.globalFreeBoard.GlobalFreeSearchOption"
+            resultMap="GlobalFreeMap">
+        SELECT
+        f.free_id,
+        f.user_id       AS f_user_id,
+        u.nickname,
+        f.title,
+        f.content,
+        f.created_at
+        FROM global_free_tb f
+        LEFT JOIN user_tb u ON (u.user_id = f.user_id)
+
+        <where>
+            <if test="searchText != null and searchText != ''">
+                (
+                f.title   LIKE CONCAT('%', #{searchText}, '%')
+                OR f.content LIKE CONCAT('%', #{searchText}, '%')
+                OR u.nickname LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+
+        ORDER BY f.free_id DESC
+        LIMIT #{startIndex}, #{size}
+    </select>
+
+    <select id="countFreeListsBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.globalFreeBoard.GlobalFreeSearchOption"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM global_free_tb f
+        LEFT JOIN user_tb u ON (u.user_id = f.user_id)
+
+        <where>
+            <if test="searchText != null and searchText != ''">
+                (
+                f.title   LIKE CONCAT('%', #{searchText}, '%')
+                OR f.content LIKE CONCAT('%', #{searchText}, '%')
+                OR u.nickname LIKE CONCAT('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+    </select>
+
+
+    <insert id="insert" keyProperty="freeId" useGeneratedKeys="true">
+        insert into global_free_tb
+        (user_id, title, content)
+        values (#{userId}, #{title}, #{content})
+    </insert>
+
+    <select id="findDetailById" resultMap="GlobalFreeMap">
+        select
+            c.free_id,
+            c.user_id,
+            c.title,
+            c.content,
+            c.created_at,
+            u.nickname
+        from
+            global_free_tb c
+            left outer join user_tb u on(u.user_id = c.user_id)
+        where
+            free_id = #{freeId}
+    </select>
+
+
+</mapper>

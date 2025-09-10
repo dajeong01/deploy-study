@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.user.UserMapper">
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"               column="user_id" />
+        <result property="oauthType"        column="oauth_type" />
+        <result property="providerId"       column="provider_id" />
+        <result property="email"            column="email" />
+        <result property="picture"          column="picture" />
+        <result property="fullName"         column="full_name" />
+        <result property="nickname"         column="nickname" />
+        <result property="phoneNumber"      column="phone_number" />
+        <result property="gunguId"          column="gungu_id" />
+        <result property="address"          column="address" />
+        <result property="birthDate"        column="birth_date" />
+        <result property="gender"           column="gender" />
+        <result property="totalKm"          column="total_km" />
+        <result property="role"             column="role" />
+    </resultMap>
+
+    <select id="findPictureById" resultType="string" parameterType="int">
+        select
+            picture
+        from
+            user_tb
+        where
+            user_id = #{userId}
+    </select>
+
+    <update id="updateProfileImgById">
+        update user_tb
+        set picture = #{picture}
+        where user_id = #{userId}
+    </update>
+
+    <update id="updateUser">
+        update user_tb
+        set
+            nickname = #{nickname},
+            phone_number = #{phoneNumber}
+        where
+            user_id = #{userId}
+    </update>
+
+    <select id="findByEmail" resultMap="UserMap">
+        select
+            user_id,
+            oauth_type,
+            provider_id,
+            email,
+            picture
+            full_name,
+            nickname,
+            phone_number,
+            gungu_id,
+            address,
+            birth_date,
+            gender,
+            total_km
+        from
+            user_tb
+        where
+            email = #{email}
+    </select>
+
+    <select id="findByNickname" resultMap="UserMap">
+        select
+            user_id,
+            oauth_type,
+            provider_id,
+            email,
+            picture,
+            full_name,
+            nickname,
+            phone_number,
+            gungu_id,
+            address,
+            birth_date,
+            gender,
+            total_km
+        from
+            user_tb
+        where
+            nickname = #{nickname}
+    </select>
+
+    <select id="findById" resultMap="UserMap">
+        SELECT
+            user_id,
+            oauth_type,
+            provider_id,
+            email,
+            picture,
+            full_name,
+            nickname,
+            phone_number,
+            gungu_id,
+            address,
+            birth_date,
+            gender,
+            total_km,
+            role
+        from
+            user_tb
+        where
+            user_id = #{userId}
+    </select>
+
+    <select id="findWelcomeByUserId" resultType="com.korit.running_back_s2.dto.welcome.WelcomeByUserIdResDto">
+        select
+            cwt.crew_id,
+            ct.crew_name,
+            ct.profile_picture,
+            case
+                when cmt.crew_member_id is null then '대기중'
+                else '승인 완료'
+            end as status
+        from
+            welcome_tb cwt
+            join crew_tb ct on (cwt.crew_id = ct.crew_id)
+            left outer join member_tb cmt on (cwt.crew_id = cmt.crew_id and cwt.user_id = cmt.user_id)
+        where
+            cwt.user_id = #{userId}
+    </select>
+
+    <select id="selectUserRankingByTotalKm"
+            resultType="com.korit.running_back_s2.dto.ranking.UserRankingRespDto">
+        select
+            user_id,
+            full_name,
+            picture,
+            nickname,
+            total_km
+        from
+            user_tb
+        order by
+            total_km desc
+    </select>
+
+    <select id="selectUserRankingByGatheringCount"
+            resultType="com.korit.running_back_s2.dto.ranking.UserRankingRespDto">
+        select
+            ut.user_id,
+            ut.full_name,
+            ut.picture,
+            ut.nickname,
+            coalesce( gpt.gathering_count , 0) as gatheringCount
+        from
+            user_tb ut
+            left outer join (
+                            select
+                                user_id,
+                                count(*) as gathering_count
+                            from
+                                gathering_participant_tb
+                            where
+                                attendance_status = 1
+                            group by
+                                user_id
+                            ) gpt on ( gpt.user_id = ut.user_id)
+        order by
+            gpt.gathering_count desc
+    </select>
+
+    <select id="findAllOfOptions" resultType="com.korit.running_back_s2.domain.user.User">
+        select
+            user_id,
+            oauth_type,
+            email,
+            picture,
+            full_name,
+            nickname,
+            phone_number,
+            address,
+            birth_date,
+            gender,
+            total_km,
+            created_at,
+            role
+        from
+            user_tb
+        where
+            full_name like concat('%', #{searchText}, '%')
+            or nickname like concat('%', #{searchText}, '%')
+            or address like concat('%', #{searchText}, '%')
+            or phone_number like concat('%', #{searchText}, '%')
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="getCountOfOptions" resultType="java.lang.Integer">
+        select
+            count(*)
+        from
+            user_tb
+        where
+            full_name like concat('%', #{searchText}, '%')
+            or nickname like concat('%', #{searchText}, '%')
+            or address like concat('%', #{searchText}, '%')
+            or phone_number like concat('%', #{searchText}, '%')
+    </select>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO user_tb
+        (oauth_type, provider_id, email, picture, full_name, nickname, phone_number, gungu_id, address, birth_date, gender, total_km  )
+        VALUES (#{oauthType}, #{providerId}, #{email}, #{picture}, #{fullName}, #{nickname}, #{phoneNumber}, #{gunguId}, #{address}, #{birthDate}, #{gender}, #{totalKm} )
+    </insert>
+
+    <update id="deleteUser">
+        UPDATE user_tb
+        SET
+            email = NULL,
+            picture = NULL,
+            full_name = CONCAT('탈퇴회원', ''),
+            nickname = CONCAT('탈퇴회원_', user_id),
+            phone_number = NULL,
+            gungu_id = NULL,
+            address = NULL,
+            birth_date = NULL,
+            gender = NULL,
+            role = NULL,
+            oauth_type = NULL,
+            provider_id = NULL,
+            total_km = NULL
+        WHERE
+            user_id = #{userId};
+    </update>
+
+    <insert id="insertDeleteTb" useGeneratedKeys="true" keyProperty="deletedId">
+        INSERT INTO deleted_user_tb
+        (deleted_id, user_id, oauth_type, provider_id, email, picture, full_name, nickname, phone_number, gungu_id, address, birth_date, gender, total_km  )
+        VALUES (default ,#{userId}, #{oauthType}, #{providerId}, #{email}, #{picture}, #{fullName}, #{nickname}, #{phoneNumber}, #{gunguId}, #{address}, #{birthDate}, #{gender}, #{totalKm} )
+    </insert>
+
+    <update id="updateUserKm">
+        UPDATE user_tb
+        SET total_km = total_km + #{kmToAdd}
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper>

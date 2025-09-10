@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.crewFreeComment.CrewFreeCommentMapper">
+
+    <resultMap id="CrewFreeCommentMap" type="com.korit.running_back_s2.domain.crewFreeComment.CrewFreeComment">
+        <id     property="freeCommentId"            column="free_comment_id"/>
+        <result property="freeId"                   column="free_id"/>
+        <result property="userId"                   column="f_user_id"/>
+        <result property="content"                  column="content"/>
+        <result property="createdAt"                column="created_at" />
+
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"                       column="user_id" />
+        <result property="oauthType"                column="oauth_type" />
+        <result property="providerId"               column="provider_id" />
+        <result property="email"                    column="email" />
+        <result property="picture"                  column="picture" />
+        <result property="fullName"                 column="full_name" />
+        <result property="nickname"                 column="nickname" />
+        <result property="phoneNumber"              column="phone_number" />
+        <result property="gunguId"                  column="gungu_id" />
+        <result property="address"                  column="address" />
+        <result property="birthDate"                column="birth_date" />
+        <result property="gender"                   column="gender" />
+        <result property="totalKm"                  column="total_km" />
+        <result property="role"                     column="role" />
+    </resultMap>
+
+    <insert id="insert">
+        insert into
+        crew_free_comment_tb (free_id, user_id, content)
+        values(#{freeId}, #{userId}, #{content})
+    </insert>
+
+    <update id="updateComment">
+        UPDATE crew_free_comment_tb
+        SET content = #{content}
+        WHERE free_comment_id = #{freeCommentId}
+        AND user_id = #{userId}
+    </update>
+
+    <delete id="deleteComment">
+        DELETE FROM crew_free_comment_tb
+        WHERE free_comment_id = #{freeCommentId}
+        AND free_id = #{freeId}
+        AND user_id = #{userId}
+    </delete>
+
+    <select id="getCommentList" resultMap="CrewFreeCommentMap">
+        select
+            f.free_comment_id,
+            f.free_id,
+            f.user_id,
+            f.content,
+            f.created_at,
+            u.nickname,
+            u.picture
+        from
+            crew_free_comment_tb f
+            left outer join user_tb u on(f.user_id = u.user_id)
+        where
+            f.free_id = #{freeId}
+        order by
+            f.created_at asc
+    </select>
+
+
+</mapper>

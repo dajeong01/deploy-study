@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.gathering.GatheringMapper">
+    <resultMap id="GatheringMap" type="Gathering">
+        <id property="gatheringId" column="gathering_id" />
+        <result property="crewId" column="crew_id" />
+        <result property="userId" column="cgt_user_id" />
+        <result property="title" column="title" />
+        <result property="content" column="content" />
+        <result property="thumbnailPicture" column="thumbnail_picture" />
+        <result property="runningDate" column="running_date" />
+        <result property="runningTime" column="running_time" />
+        <result property="placeName" column="place_name" />
+        <result property="address" column="address" />
+        <result property="roadAddress" column="road_address" />
+        <result property="latitude" column="latitude" />
+        <result property="longitude" column="longitude" />
+        <result property="km" column="km" />
+        <result property="cost" column="cost" />
+        <result property="maxParticipants" column="max_participants" />
+        <result property="status" column="status" />
+        <result property="createdAt" column="created_at" />
+        <result property="currentParticipants" column="current_participants"/>
+        <result property="isAttending" column="is_attending"/>
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User">
+        <id property="userId" column="user_id" />
+        <result property="nickname" column="nickname" />
+        <result property="fullName" column="full_name" />
+        <result property="picture" column="picture" />
+        <result property="attendanceStatus" column="attendance_status"/>
+    </resultMap>
+
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="gatheringId">
+        INSERT INTO gathering_tb
+        VALUES (
+            default,
+            #{crewId},
+            #{userId},
+            #{title},
+            #{content},
+            #{thumbnailPicture},
+            #{runningDate},
+            #{runningTime},
+            #{placeName},
+            #{address},
+            #{roadAddress},
+            #{latitude},
+            #{longitude},
+            #{km},
+            #{cost},
+            #{maxParticipants},
+            1,
+            now()
+        );
+    </insert>
+
+        <update id="update" parameterType="com.korit.running_back_s2.domain.gathering.Gathering">
+        UPDATE
+            gathering_tb
+        SET
+            title = #{title},
+            content = #{content},
+            running_date = #{runningDate},
+            running_time = #{runningTime},
+            place_name = #{placeName},
+            address = #{address},
+            road_address = #{roadAddress},
+            latitude = #{latitude},
+            longitude = #{longitude},
+            km = #{km},
+            cost = #{cost},
+            max_participants = #{maxParticipants},
+            thumbnail_picture = #{thumbnailPicture}
+        WHERE
+            gathering_id = #{gatheringId}
+    </update>
+
+
+    <select id="findAllByCrewId" resultMap="GatheringMap">
+        SELECT
+            cgt.gathering_id,
+            cgt.crew_id,
+            cgt.user_id as cgt_user_id,
+            cgt.title,
+            cgt.content,
+            cgt.thumbnail_picture,
+            cgt.running_date,
+            cgt.running_time,
+            cgt.place_name,
+            cgt.address,
+            cgt.road_address,
+            cgt.latitude,
+            cgt.longitude,
+            cgt.km,
+            cgt.cost,
+            cgt.max_participants,
+            if((COUNT(gpt.participant_id) &lt; cgt.max_participants) and TIMESTAMP(cgt.running_date, cgt.running_time) &gt; now(), 1, 2) as status,
+            cgt.created_at,
+
+            ut.user_id,
+            ut.nickname,
+            ut.full_name,
+            ut.picture,
+
+            COUNT(gpt.participant_id) AS current_participants,
+            if(count(gpt2.participant_id) = 0, 'false', 'true') as is_attending
+        FROM
+            gathering_tb cgt
+            LEFT JOIN user_tb ut ON ut.user_id = cgt.user_id
+            LEFT JOIN gathering_participant_tb gpt ON gpt.gathering_id = cgt.gathering_id
+<!--            LEFT JOIN gathering_participant_tb gpt2 ON gpt2.gathering_id = cgt.gathering_id and gpt2.user_id =#{userId}-->
+            LEFT JOIN gathering_participant_tb gpt2 ON gpt2.gathering_id = cgt.gathering_id and gpt2.user_id = cgt.user_id
+        WHERE
+            cgt.crew_id = #{crewId}
+        GROUP BY
+            cgt.gathering_id,
+            gpt2.participant_id
+        ORDER BY
+            cgt.running_date DESC, cgt.running_time DESC
+    </select>
+
+    <select id="findParticipantsByGatheringId" resultMap="UserMap">
+        SELECT
+        ut.user_id,
+        ut.nickname,
+        ut.full_name,
+        ut.picture,
+        gpt.attendance_status
+        FROM
+        gathering_participant_tb gpt
+        INNER JOIN user_tb ut ON ut.user_id = gpt.user_id
+        WHERE
+        gpt.gathering_id = #{gatheringId}
+    </select>
+
+    <select id="findGatheringByUserId" resultType="com.korit.running_back_s2.dto.user.UserGatheringsReqDto">
+        select
+            ct.crew_id,
+            gt.thumbnail_picture,
+            ct.crew_name,
+            gt.title,
+            gt.running_date,
+            gt.running_time,
+            gt.place_name,
+            gt.km,
+            gt.cost
+        from
+            gathering_participant_tb gpt
+            left outer join gathering_tb gt on (gt.gathering_id = gpt.gathering_id)
+            left outer join crew_tb ct on (ct.crew_id = gt.crew_id)
+        where
+            gpt.user_id = #{userId};
+    </select>
+
+    <select id="findByGatheringId" resultType="com.korit.running_back_s2.domain.gathering.Gathering">
+        SELECT
+            gathering_id,
+            crew_id,
+            user_id,
+            title,
+            content,
+            thumbnail_picture,
+            running_date,
+            running_time,
+            place_name,
+            address,
+            road_address,
+            latitude,
+            longitude,
+            km,
+            cost,
+            max_participants
+        FROM
+            gathering_tb
+        WHERE
+            gathering_id = #{gatheringId}
+    </select>
+
+    <select id="getKmById" resultType="double">
+        SELECT
+            km
+        FROM
+            gathering_tb
+        WHERE
+            gathering_id = #{gatheringId}
+    </select>
+
+</mapper>

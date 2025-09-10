@@ -1,0 +1,98 @@
+spring:
+  profiles:
+    active: local
+    group:
+      local: local-server, common, secret
+      junil: junil-server, common, secret
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: junil-server
+
+app:
+  web-host: "https://ongirog.com"
+  server-host: "https://ongirog.com"
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: local-server
+  
+app:
+  web-host: "http://localhost:5173"
+  server-host: "http://localhost:8080"
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: common
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: "${app.server-host}/login/oauth2/code/google"
+          kakao:
+            redirect-uri: "${app.server-host}/login/oauth2/code/kakao"
+          naver:
+            redirect-uri: "${app.server-host}/login/oauth2/code/naver"
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      enabled: true
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  type-aliases-package: com.korit.running_back_s2.domain
+
+app:
+  image-configs:
+    profile:
+      prefix: "${app.server-host}/image/profile"
+      dir-path: "${user.dir}/upload/profile"
+      default-img: "default.jpg"
+    crewProfile:
+      prefix: "${app.server-host}/image/crew/profile"
+      dir-path: "${user.dir}/upload/crew/profile"
+      default-img: "default.jpg"
+    crewThumbnail:
+      prefix: "${app.server-host}/image/crew/thumbnail"
+      dir-path: "${user.dir}/upload/crew/thumbnail"
+      default-img: "default.jpg"
+    crewGathering:
+      prefix: "${app.server-host}/image/crew/gathering"
+      dir-path: "${user.dir}/upload/crew/gathering"
+      default-img: "default.jpg"
+    crewFreeBoard:
+      prefix: "${app.server-host}/image/board/free"
+      dir-path: "${user.dir}/upload/board/free"
+      default-img: "default.jpg"
+    crewNoticeBoard:
+      prefix: "${app.server-host}/image/board/notice"
+      dir-path: "${user.dir}/upload/board/notice"
+      default-img: "default.jpg"
+    globalFreeBoard:
+      prefix: "${app.server-host}/image/global/free"
+      dir-path: "${user.dir}/upload/global/free"
+      default-img: "default.jpg"
+    globalNoticeBoard:
+      prefix: "${app.server-host}/image/global/notice"
+      dir-path: "${user.dir}/upload/global/notice"
+      default-img: "default.jpg"
+    ask:
+      prefix: "${app.server-host}/image/ask"
+      dir-path: "${user.dir}/upload/ask"
+      default-img: "default.jpg"

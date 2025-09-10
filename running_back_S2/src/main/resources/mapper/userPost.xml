@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.myPost.UserPostMapper">
+
+    <resultMap id="userPostMap" type="com.korit.running_back_s2.domain.myPost.UserPost">
+        <result column="src"        property="src"/>
+        <result column="post_id"    property="postId"/>
+        <result column="crew_id"    property="crewId"/>
+        <result column="title"      property="title"/>
+        <result column="content"    property="content"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="user_id"    property="userId"/>
+        <association property="crew" resultMap="CrewMap" />
+    </resultMap>
+
+    <resultMap id="CrewMap" type="com.korit.running_back_s2.domain.crew.Crew">
+        <id property="crewId"                   column="crew_id"/>
+        <result property="gunguId"              column="gungu_id"/>
+        <result property="crewName"             column="crew_name"/>
+        <result property="title"                column="title"/>
+        <result property="content"              column="content"/>
+        <result property="limitedPeople"        column="limited_people"/>
+        <result property="profilePicture"       column="profile_picture"/>
+        <result property="thumbnailPicture"     column="thumbnail_picture"/>
+        <result property="userId"               column="user_id"/>
+        <result property="createdAt"            column="created_at"/>
+        <result property="totalKm"              column="total_km"/>
+        <result property="gunguName"            column="gungu_name"/>
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"               column="user_id" />
+        <result property="oauthType"        column="oauth_type" />
+        <result property="providerId"       column="provider_id" />
+        <result property="email"            column="email" />
+        <result property="picture"          column="picture" />
+        <result property="fullName"         column="full_name" />
+        <result property="nickname"         column="nickname" />
+        <result property="phoneNumber"      column="phone_number" />
+        <result property="gunguId"          column="gungu_id" />
+        <result property="address"          column="address" />
+        <result property="birthDate"        column="birth_date" />
+        <result property="gender"           column="gender" />
+        <result property="totalKm"          column="total_km" />
+        <result property="role"             column="role" />
+    </resultMap>
+
+    <select id="findAllUserPostsBySearchOption" resultMap="userPostMap">
+        select
+            v.src,
+            v.post_id,
+            v.crew_id,
+            c.crew_name,
+            v.title,
+            v.content,
+            v.created_at,
+            v.user_id,
+            c.crew_name
+        from
+            user_post_view v
+            left outer join crew_tb c on (c.crew_id = v.crew_id)
+            <where>
+                v.user_id = #{userId}
+                <if test="src != null and src != ''">
+                    and v.src = #{src}
+                </if>
+                <if test="crewId != null">
+                    and v.crew_id = #{crewId}
+                </if>
+                <if test="searchText != null and searchText != ''">
+                    and (
+                    v.title   like concat('%', #{searchText}, '%')
+                    or v.content like concat('%', #{searchText}, '%')
+                    )
+                </if>
+            </where>
+        order by created_at desc, post_id desc
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="countUserPostsBySearchOption" resultType="int">
+        select COUNT(*)
+        from user_post_view
+        <where>
+            user_id = #{userId}
+            <if test="src != null and src != ''">
+                and src = #{src}
+            </if>
+            <if test="crewId != null">
+                and crew_id = #{crewId}
+            </if>
+            <if test="searchText != null and searchText != ''">
+                and (
+                title   like concat('%', #{searchText}, '%')
+                or content like concat('%', #{searchText}, '%')
+                )
+            </if>
+        </where>
+    </select>
+</mapper>

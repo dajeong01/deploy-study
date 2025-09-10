@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.report.ReportMapper">
+
+    <resultMap id="ReportMap" type="com.korit.running_back_s2.domain.report.Report">
+        <id     property="reportId"         column="report_id"/>
+        <result property="crewId"           column="crew_id"/>
+        <result property="reportMemberId"   column="report_member_id"/>
+        <result property="reportedMemberId" column="reported_member_id"/>
+        <result property="reason"           column="reason"/>
+        <result property="createdAt"        column="created_at"/>
+
+        <association property="reporterUser"  resultMap="ReporterUserMap"/>
+        <association property="reportedUser"  resultMap="ReportedUserMap"/>
+    </resultMap>
+
+    <resultMap id="ReporterUserMap" type="User">
+        <id property="userId"               column="reporter_user_id"/>
+        <result property="picture"          column="reporter_picture"/>
+        <result property="fullName"         column="reporter_full_name"/>
+        <result property="nickname"         column="reporter_nickname"/>
+    </resultMap>
+
+    <resultMap id="ReportedUserMap" type="User">
+        <id property="userId"               column="reported_user_id"/>
+        <result property="picture"          column="reported_picture"/>
+        <result property="fullName"         column="reported_full_name"/>
+        <result property="nickname"         column="reported_nickname"/>
+    </resultMap>
+
+    <delete id="delete">
+        delete from report_tb
+        where report_id = #{reportId}
+    </delete>
+
+    <select id="findMemberIdByCrewAndUser" resultType="int">
+        select
+            member_id
+        from
+            member_tb
+        where
+            crew_id = #{crewId} and user_id = #{userId}
+    </select>
+
+    <insert id="insertReport">
+        insert into report_tb
+            (crew_id, report_member_id, reported_member_id, reason)
+        values
+            (#{crewId}, #{reporterMemberId}, #{reportedMemberId}, #{reason})
+    </insert>
+
+    <select id="findReportsByCrew" resultMap="ReportMap">
+        select
+            r.report_id,
+            r.crew_id,
+            r.report_member_id,
+            r.reported_member_id,
+            r.reason,
+            r.created_at,
+            u1.user_id        as reporter_user_id,
+            u1.picture        as reporter_picture,
+            u1.full_name      as reporter_full_name,
+            u1.nickname       as reporter_nickname,
+            u2.user_id        as reported_user_id,
+            u2.picture        as reported_picture,
+            u2.full_name      as reported_full_name,
+            u2.nickname       as reported_nickname
+        from
+            report_tb r
+            left outer join member_tb m1 on (m1.member_id = r.report_member_id)
+            left outer join user_tb   u1 on (u1.user_id   = m1.user_id)
+            left outer join member_tb m2 on (m2.member_id = r.reported_member_id)
+            left outer join user_tb   u2 on (u2.user_id   = m2.user_id)
+        where
+            r.crew_id = #{crewId}
+        order by r.created_at desc
+    </select>
+
+    <select id="findReportsMadeByUser" resultType="com.korit.running_back_s2.dto.report.ReportResqDto">
+        select
+            rt.report_id,
+            rt.crew_id,
+            rt.report_member_id,
+            ut.full_name as report_member_name,
+            rt.reported_member_id,
+            ru.full_name as reported_member_name,
+            rt.reason,
+            rt.created_at
+        from
+            report_tb rt
+            left outer join member_tb mt on (mt.member_id = rt.report_member_id)
+            left outer join user_tb ut on (ut.user_id = mt.user_id)
+            left outer join member_tb rm on (rm.member_id = rt.reported_member_id)
+            left outer join user_tb ru on (ru.user_id = rm.user_id)
+        where
+            ut.user_id = #{userId};
+    </select>
+
+    <select id="findReportsReceivedByUser" resultType="com.korit.running_back_s2.dto.report.ReportResqDto">
+        select
+            rt.report_id,
+            rt.crew_id,
+            rt.report_member_id,
+            ru.full_name as report_member_name,
+            rt.reported_member_id,
+            ut.full_name as reported_member_name,
+            rt.reason,
+            rt.created_at
+        from
+            report_tb rt
+            left outer join member_tb mt on (mt.member_id = rt.reported_member_id)
+            left outer join user_tb ut on (ut.user_id = mt.user_id)
+            left outer join member_tb rm on (rm.member_id = rt.report_member_id)
+            left outer join user_tb ru on (ru.user_id = rm.user_id)
+        where
+            ut.user_id = #{userId};
+    </select>
+
+</mapper>

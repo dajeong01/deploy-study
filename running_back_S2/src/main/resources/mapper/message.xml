@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.message.MessageMapper">
+
+    <insert id="insertCrewMessage">
+        insert into message_tb
+        (crew_id, content)
+        values(#{crewId}, #{content})
+    </insert>
+
+    <select id="getCrewMessage" resultType="com.korit.running_back_s2.domain.message.Message">
+        select
+            *
+        from
+            message_tb
+        where
+            crew_id = #{crewId}
+        order by
+            message_id desc
+    </select>
+
+
+</mapper>

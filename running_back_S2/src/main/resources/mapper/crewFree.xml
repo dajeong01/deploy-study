@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.crewFreeBoard.CrewFreeMapper">
+
+    <resultMap id="CrewFreeMap" type="com.korit.running_back_s2.domain.crewFreeBoard.CrewFree">
+        <id     property="freeId"                   column="free_id"/>
+        <result property="crewId"                   column="crew_id"/>
+        <result property="userId"                   column="f_user_id"/>
+        <result property="title"                    column="title"/>
+        <result property="content"                  column="content"/>
+        <result property="createdAt"                column="created_at" />
+
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId"                       column="user_id" />
+        <result property="oauthType"                column="oauth_type" />
+        <result property="providerId"               column="provider_id" />
+        <result property="email"                    column="email" />
+        <result property="picture"                  column="picture" />
+        <result property="fullName"                 column="full_name" />
+        <result property="nickname"                 column="nickname" />
+        <result property="phoneNumber"              column="phone_number" />
+        <result property="gunguId"                  column="gungu_id" />
+        <result property="address"                  column="address" />
+        <result property="birthDate"                column="birth_date" />
+        <result property="gender"                   column="gender" />
+        <result property="totalKm"                  column="total_km" />
+        <result property="role"                     column="role" />
+    </resultMap>
+
+    <update id="updateContent">
+        UPDATE
+            crew_free_tb
+        SET
+            title = #{title},
+            content = #{content}
+        WHERE free_id = #{freeId}
+    </update>
+
+    <delete id="deleteFeed">
+        delete from crew_free_tb
+        where free_id = #{freeId} and crew_id = #{crewId}
+    </delete>
+
+    <select id="findAllFreeListBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.crewFreeBoard.CrewFreeSearchOption"
+            resultMap="CrewFreeMap">
+        select
+            f.free_id,
+            f.crew_id,
+            f.user_id as f_user_id,
+            u.nickname,
+            f.title,
+            f.content,
+            f.created_at
+        from
+            crew_free_tb f
+            left outer join user_tb u on(f.user_id = u.user_id)
+        where
+            f.crew_id = #{crewId}
+            <if test="searchText != null and searchText != ''">
+            AND (
+            f.title LIKE CONCAT('%', #{searchText}, '%') or u.nickname LIKE CONCAT('%', #{searchText}, '%') )
+            </if>
+        order by
+            f.free_id desc
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="countFreeListsBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.crewFreeBoard.CrewFreeSearchOption"
+            resultType="int">
+        select
+            COUNT(*)
+        from
+        crew_free_tb f
+        left outer join user_tb u on (u.user_id = f.user_id)
+        where
+            f.crew_id = #{crewId}
+            <if test="searchText != null and searchText != ''">
+                AND (
+                f.title LIKE CONCAT('%', #{searchText}, '%') or u.nickname LIKE CONCAT('%', #{searchText}, '%') )
+            </if>
+    </select>
+
+
+    <insert id="insert" keyProperty="freeId" useGeneratedKeys="true">
+        insert into crew_free_tb
+        (crew_id, user_id, title, content)
+        values (#{crewId}, #{userId}, #{title}, #{content})
+    </insert>
+
+    <select id="findDetailById" resultMap="CrewFreeMap">
+        select
+            c.free_id,
+            c.crew_id,
+            c.user_id,
+            c.title,
+            c.content,
+            c.created_at,
+            u.nickname
+        from
+            crew_free_tb c
+            left outer join user_tb u on(u.user_id = c.user_id)
+            left outer join member_tb mt on (mt.user_id = c.user_id)
+        where
+            c.free_id = #{freeId}
+            and c.crew_id = #{crewId}
+    </select>
+    <select id="findAllTest" resultType="java.lang.String">
+        select
+        content
+        from crew_free_tb
+        where crew_id = #{crewId}
+
+    </select>
+
+
+</mapper>

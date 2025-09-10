@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.korit.running_back_s2.domain.member.MemberMapper">
+
+    <resultMap id="MemberMap" type="com.korit.running_back_s2.domain.member.Member">
+        <id     property="memberId"                 column="member_id"/>
+        <result property="userId"                   column="cm_user_id"/>
+        <result property="roleId"                   column="role_id"/>
+        <association property="user" resultMap="UserMap" />
+    </resultMap>
+
+    <resultMap id="UserMap" type="User" >
+        <id property="userId" column="user_id" />
+        <result property="oauthType"                column="oauth_type" />
+        <result property="providerId"               column="provider_id" />
+        <result property="email"                    column="email" />
+        <result property="picture"                  column="picture" />
+        <result property="fullName"                 column="full_name" />
+        <result property="nickname"                 column="nickname" />
+        <result property="phoneNumber"              column="phone_number" />
+        <result property="gunguId"                  column="gungu_id" />
+        <result property="address"                  column="address" />
+        <result property="birthDate"                column="birth_date" />
+        <result property="gender"                   column="gender" />
+        <result property="totalKm"                  column="total_km" />
+        <result property="role"                     column="role" />
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="memberId">
+        insert into member_tb (crew_id, user_id, role_id)
+        values ( #{crewId}, #{userId}, 3)
+    </insert>
+
+    <delete id="deleteWelcomeByMemberId" parameterType="int">
+        DELETE w
+        FROM welcome_tb w
+        JOIN member_tb m
+        ON m.member_id = #{memberId}
+        AND w.crew_id = m.crew_id
+        AND w.user_id = m.user_id
+    </delete>
+
+    <delete id="deleteMember" parameterType="int">
+        DELETE FROM member_tb
+        WHERE member_id = #{memberId}
+        AND role_id != 1
+    </delete>
+
+    <select id="findAllMembersBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.member.MemberSearchOption"
+            resultMap="MemberMap">
+        select
+        cm.member_id,
+        cm.user_id as cm_user_id,
+        cm.role_id,
+        u.full_name,
+        u.nickname,
+        u.picture as picture
+        from
+        member_tb cm
+        left outer join user_tb u on (u.user_id = cm.user_id)
+        where
+        cm.crew_id = #{crewId}
+        <if test="searchText != null and searchText != ''">
+            AND (
+            u.full_name LIKE CONCAT('%', #{searchText}, '%')
+            OR u.nickname LIKE CONCAT('%', #{searchText}, '%')
+            )
+        </if>
+        order by
+        cm.role_id asc,
+        cm.member_id asc
+        limit #{startIndex}, #{size}
+    </select>
+
+    <select id="countMembersBySearchOption"
+            parameterType="com.korit.running_back_s2.domain.member.MemberSearchOption"
+            resultType="int">
+        select
+        COUNT(*)
+        from
+        member_tb cm
+        left outer join user_tb u on (u.user_id = cm.user_id)
+        where
+        cm.crew_id = #{crewId}
+        <if test="searchText != null and searchText != ''">
+            AND (
+            u.full_name LIKE CONCAT('%', #{searchText}, '%')
+            OR u.nickname LIKE CONCAT('%', #{searchText}, '%')
+            )
+        </if>
+    </select>
+    <select id="findById" resultMap="MemberMap">
+        select
+        cm.member_id,
+        cm.crew_id,
+        cm.user_id as cm_user_id,
+        cm.role_id,
+        u.user_id,
+        u.nickname,
+        u.full_name,
+        u.picture as picture,
+        u.gender,
+        u.birth_date,
+        u.total_km
+        from
+        member_tb cm
+        left outer join user_tb u ON u.user_id = cm.user_id
+        where
+        cm.member_id = #{memberId}
+    </select>
+
+    <select id="findMemberIdByCrewIdAndUserId" resultType="integer">
+        select
+            member_id
+        from
+            member_tb
+        where
+            crew_id = #{crewId}
+            and user_id = #{userId}
+    </select>
+
+    <select id="countMember" resultType="java.lang.Integer">
+        select
+        count(*)
+        from
+        member_tb
+        where
+        crew_id = #{crewId}
+    </select>
+
+    <update id="updateRole">
+        update member_tb
+        set
+            role_id = #{roleId}
+        where
+            member_id = #{memberId}
+    </update>
+
+
+    <insert id="insertLeaderRole">
+        insert into member_tb (crew_id, user_id, role_id)
+        values (#{crewId}, #{userId}, 1)
+    </insert>
+
+    <select id="findCrewsByUserId" resultType="com.korit.running_back_s2.dto.crew.CrewsByUserIdResDto">
+        select
+            ct.crew_id,
+            ct.crew_name,
+            ct.title,
+            ct.thumbnail_picture,
+            gt.gungu_name,
+            mrt.role_name
+        from
+        member_tb mt
+            left outer join crew_tb ct on (mt.crew_id = ct.crew_id)
+            left outer join gungu_tb gt on (gt.gungu_id = ct.gungu_id)
+            left outer join member_role_tb mrt on (mt.role_id = mrt.role_id)
+        where
+            mt.user_id = #{userId}
+            and crew_name is not null
+    </select>
+
+    <select id="getMembers" resultMap="MemberMap">
+        select
+            m.member_id,
+            m.crew_id,
+            m.user_id,
+            m.role_id,
+            m.joined_at,
+            u.user_id,
+            u.picture ,
+            u.full_name,
+            u.nickname
+        from
+            member_tb m
+            left outer join user_tb u on(m.user_id = u.user_id)
+        where
+            crew_id = #{crewId}
+        order by
+            m.role_id asc
+    </select>
+</mapper>
