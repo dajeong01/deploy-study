@@ -23,6 +23,12 @@ jobs:
       BUILD_MODE: ${{ 
         github.ref_name == 'deploy_junil' && 'junil'
         }}
+      SSH_HOST: ${{ 
+        github.ref_name == 'deploy_junil' && secrets.SSH_HOST_JUNIL
+        }}
+      SSH_KEY: ${{ 
+        github.ref_name == 'deploy_junil' && secrets.SSH_KEY_JUNIL
+        }}
     steps:
       - name: checkout
         uses: actions/checkout@v5.0.0
@@ -55,6 +61,19 @@ jobs:
           cat .env
           docker build --build-arg SERVERNAME=${{ env.BUILD_MODE }} -t ${{ env.DOCKER_USERNAME }}/react-app:latest .
           docker push ${{ env.DOCKER_USERNAME }}/react-app:latest
+
+      - name: ssh 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SSH_HOST }}
+          username: ubuntu
+          key: ${{ env.SSH_KEY }}
+          script: |
+            cd /home/ubuntu/project
+
+            sudo docker-compose pull
+            sudo docker-compose down
+            sudo docker-compose up -d
 
 
 
